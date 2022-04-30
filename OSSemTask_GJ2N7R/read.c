@@ -1,36 +1,38 @@
-#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <string.h>
 #include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 
 int main(){
-	sem_t *x;
-	x = sem_open("/x", O_CREAT);
-	int value;
-	do{
-		sem_getvalue(x, &value);
-		printf("Várakozás az olvasásra..(szemafor erteke: %d)\n", value);
-		sleep(1);
-	}while(!value);
-
+	int semid, getvalue;
+	key_t key = 12345L;
+	semid = semget(key, 1, 0);
+	if(semid < 0){
+		perror("Szemafor azonosítása során hiba lépett fel!\n");
+		exit(0);
+	}
 	int fd = open("GJ2N7R.txt", O_RDONLY);
 	if(fd == -1){
 		printf("Nem sikerult megnyitni a fajlt!\n");
-	}else{
-		printf("File sikeresen megnyitva!\n");
-		char beolvas[100];
-		lseek(fd, 0, SEEK_SET);
-		read(fd, beolvas, sizeof(beolvas));
-		printf("Szoveg sikeresen beolvasva: %s\n", beolvas); 
+		exit(0);
 	}
+	do{
+		getvalue = semctl(semid, 0, GETVAL, NULL);
+		printf("Olvasásra várakozom...\n");
+		sleep(3);
+	}while(!getvalue);
+	printf("File sikeresen megnyitva!\n");
+	char beolvas[100];
+	lseek(fd, 0, SEEK_SET);
+	read(fd, beolvas, sizeof(beolvas));
+	printf("Szoveg sikeresen beolvasva: %s\n", beolvas);
+
+	semctl(semid, 0, IPC_RMID, 0); 
+	
 	close(fd);
-	sem_wait(x);
-	sem_close(x);
 	return 0;
 }
