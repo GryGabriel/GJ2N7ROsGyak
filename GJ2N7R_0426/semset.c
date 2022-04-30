@@ -15,5 +15,5 @@ int main(){
 		exit(0);
 	}
 	returnV = semctl(semid, 0, SETVAL, 1);
-	printf("set return value: %d, semval: 1\n", returnValue);
+	printf("set return value: %d, semval: 1\n", returnV);
 }
